@@ -364,3 +364,7 @@ FodyWeavers.xsd
 
 # Don't include the library files 
 *.dll
+
+# Or any compiled binaries
+*.exe
+*.zip

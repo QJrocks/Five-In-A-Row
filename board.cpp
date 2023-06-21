@@ -411,11 +411,11 @@ Board::Board() {
 	gameBoard.resize(boardSize * boardSize);
 	boardValues.resize(boardSize * boardSize);
 
-	boardVis = visualResource("board.png");
-	wallVis = visualResource("wall.png");
-	P1Vis = visualResource("p1piece.png");
-	P2Vis = visualResource("p2piece.png");
-	cursorVis = visualResource("cursor.png");
+	boardVis = visualResource("Img/board.png");
+	wallVis = visualResource("Img/wall.png");
+	P1Vis = visualResource("Img/p1piece.png");
+	P2Vis = visualResource("Img/p2piece.png");
+	cursorVis = visualResource("Img/cursor.png");
 
 	weightDisplayFont.loadFromFile("Roboto-Regular.ttf");
 	dispValText.setFont(weightDisplayFont);
