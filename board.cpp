@@ -428,6 +428,17 @@ Board::Board() {
 	flashDispTimer = 0;
 }
 
+void Board::prepareViews(sf::View wView, sf::View bView) {
+	windowView = wView;
+	boardView = bView;
+
+	viewScaleDifference = sf::Vector2f(windowView.getSize().x / boardView.getSize().x, windowView.getSize().y / boardView.getSize().y);
+	windowView.move(-8 * viewScaleDifference.x, -8 * viewScaleDifference.y);
+
+	dispValText.setCharacterSize(10 * std::min(viewScaleDifference.x, viewScaleDifference.y));
+	flashyText.setCharacterSize(30 * std::min(viewScaleDifference.x, viewScaleDifference.y));
+}
+
 void Board::clearBoard(int layout) {
 	memset(&gameBoard[0], BS_Empty, sizeof(BoardSpace) * gameBoard.size());
 	//fill things depending on layout here
@@ -548,19 +559,21 @@ void Board::update() {
 }
 
 void Board::draw(sf::RenderTarget& canvas) {
-	boardVis.draw(canvas, -8, -8);
+	boardVis.draw(canvas, 0, 0);
 	for (int x = 0; x < boardSize; x++) {
 		for (int y = 0; y < boardSize; y++) {
 			switch (getSpaceType(x, y)) {
 			case BS_Empty:
+				canvas.setView(windowView);
 				if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
 					dispValText.setString(std::to_string(boardValues[positionToBoardIndex(x, y)].p2score));
 				}
 				else {
 					dispValText.setString(std::to_string(boardValues[positionToBoardIndex(x, y)].p1score));
 				}
-				dispValText.setPosition((float)(x * 16 + 5), (float)(y * 16 + 2));
+				dispValText.setPosition((float)((x * 16) * viewScaleDifference.x), (float)((y * 16) * viewScaleDifference.y));
 				canvas.draw(dispValText);
+				canvas.setView(boardView);
 				break;
 			case BS_P1:
 				P1Vis.draw(canvas, (float)(x * 16), (float)(y * 16));
@@ -578,6 +591,8 @@ void Board::draw(sf::RenderTarget& canvas) {
 	cursorVis.draw(canvas, (float)(cursorX * 16), (float)(cursorY * 16));
 
 	if (flashDispTimer > 0) {
+		canvas.setView(windowView);
 		canvas.draw(flashyText);
+		canvas.setView(boardView);
 	}
 }

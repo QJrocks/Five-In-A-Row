@@ -3,6 +3,7 @@
 #include <vector>
 #include "visualResource.h"
 
+//enum for the various states any space of the board can be taken: if it's empty, walled, or taken by a piece.
 enum BoardSpace {
 	BS_Empty = 0,
 	BS_P1 = 1,
@@ -10,6 +11,7 @@ enum BoardSpace {
 	BS_Wall = 3
 };
 
+//used for the AI analysis of the board. A list of all relevant formations that can be created in the Five in a Row game.
 enum BoardAnalysisScoreType {
 	BAST_None = 0,
 	BAST_One,
@@ -27,12 +29,16 @@ enum BoardAnalysisScoreType {
 	BAST_FourFour
 };
 
+//Struct that holds the result of a single analyzed row.
+//Holds the data for 9 spaces in a line (the center and 4 on each side),
+//and the most relevant formation for each player.
 struct BoardAnalysisRow {
 	BoardSpace line[9];
 	BoardAnalysisScoreType p1;
 	BoardAnalysisScoreType p2;
 };
 
+//Struct that holds the complete analysis of a single space on the board. Holds 4 different rows: horizontal, vertical, and both diagonals.
 struct BoardRowSet {
 	BoardAnalysisRow hRow;
 	BoardAnalysisRow vRow;
@@ -40,6 +46,7 @@ struct BoardRowSet {
 	BoardAnalysisRow duRow;
 };
 
+//Holds the resulting score of a given space, where higher values indicate that the space holds greater value to capture.
 struct BoardAnalysisScore {
 	int p1score;
 	int p2score;
@@ -49,9 +56,14 @@ struct BoardAnalysisScore {
 	}
 };
 
+//Set of parameters for the AI. The array of weight indicates how much value should be assigned to each formation.
+//(Matches up to the list of BAST enums)
+//The AI will multiply its projected score for taking a piece by either the offense or defense multiplier.
+//The multiplier is decided by the highest projected score of the opposing player, defaulting to the offense multiplier.
+//If the score exceeds the danger threshold, the AI will use the defense multiplier.
 struct BoardAI {
 	int weights[13];
-	int dangerThreshold; //uses defense instead of offense multiplier when highest opponent score is above this threshold
+	int dangerThreshold;
 	float offenseMultiplier;
 	float defenseMultiplier;
 
@@ -97,8 +109,15 @@ private:
 	int getHighestScoreP1();
 	int getHighestScoreP2();
 
+	sf::View windowView;
+	sf::View boardView;
+
+	sf::Vector2f viewScaleDifference;
+
 public:
 	Board();
+
+	void prepareViews(sf::View wView, sf::View bView);
 
 	void clearBoard(int layout);
 
