@@ -350,16 +350,16 @@ BoardAnalysisScore Board::analyzeSpace(int x, int y, const int weights[], bool p
 }
 
 void Board::analyzeBoard(BoardAI& analysisAI) {
-	memset(&boardValues[0], 0, sizeof(BoardAnalysisScore) * boardValues.size());
+	memset(&boardScoreValues[0], 0, sizeof(BoardAnalysisScore) * boardScoreValues.size());
 	for (int x = 0; x < boardSize; x++) {
 		for (int y = 0; y < boardSize; y++) {
 			if (getSpaceType(x, y) == BS_Empty) {
-				boardValues[positionToBoardIndex(x, y)] = analyzeSpace(x, y, analysisAI.weights);
+				boardScoreValues[positionToBoardIndex(x, y)] = analyzeSpace(x, y, analysisAI.weights);
 			}
 		}
 	}
 	if (getSpaceType(7, 7) == BS_Empty) {
-		boardValues[positionToBoardIndex(7, 7)] = { 1000000, 1000000 }; //make the AI default to center of board
+		boardScoreValues[positionToBoardIndex(7, 7)] = { 1000000, 1000000 }; //make the AI default to center of board
 	}
 
 	//now, make the AI pick a space
@@ -368,13 +368,13 @@ void Board::analyzeBoard(BoardAI& analysisAI) {
 	float AImult = (highestScoreP1 > analysisAI.dangerThreshold) ? analysisAI.defenseMultiplier : analysisAI.offenseMultiplier;
 	for (int x = 0; x < boardSize; x++) {
 		for (int y = 0; y < boardSize; y++) {
-			if (boardValues[positionToBoardIndex(x, y)].p2score >= analysisAI.weights[BAST_FiveInARow]) { //blood in the water
+			if (boardScoreValues[positionToBoardIndex(x, y)].p2score >= analysisAI.weights[BAST_FiveInARow]) { //blood in the water
 				analysisAI.decisionX = x;
 				analysisAI.decisionY = y;
 				return;
 			}
 
-			int AIval = (int)(boardValues[positionToBoardIndex(x, y)].p2score * AImult) + boardValues[positionToBoardIndex(x, y)].p1score;
+			int AIval = (int)(boardScoreValues[positionToBoardIndex(x, y)].p2score * AImult) + boardScoreValues[positionToBoardIndex(x, y)].p1score;
 			if (AIval > max) {
 				max = AIval;
 				analysisAI.decisionX = x;
@@ -392,24 +392,24 @@ void Board::analyzeBoard(BoardAI& analysisAI) {
 }
 
 int Board::getHighestScoreP1() {
-	int max = boardValues[0].p1score;
-	for (int x = 1; x < boardValues.size(); x++) {
-		if (boardValues[x].p1score > max) { max = boardValues[x].p1score; }
+	int max = boardScoreValues[0].p1score;
+	for (int x = 1; x < boardScoreValues.size(); x++) {
+		if (boardScoreValues[x].p1score > max) { max = boardScoreValues[x].p1score; }
 	}
 	return max;
 }
 
 int Board::getHighestScoreP2() {
-	int max = boardValues[0].p1score;
-	for (int x = 1; x < boardValues.size(); x++) {
-		if (boardValues[x].p1score > max) { max = boardValues[x].p1score; }
+	int max = boardScoreValues[0].p1score;
+	for (int x = 1; x < boardScoreValues.size(); x++) {
+		if (boardScoreValues[x].p1score > max) { max = boardScoreValues[x].p1score; }
 	}
 	return max;
 }
 
 Board::Board() {
 	gameBoard.resize(boardSize * boardSize);
-	boardValues.resize(boardSize * boardSize);
+	boardScoreValues.resize(boardSize * boardSize);
 
 	boardVis = visualResource("Img/board.png");
 	wallVis = visualResource("Img/wall.png");
@@ -480,7 +480,9 @@ void Board::placePiece(BoardSpace type, BoardAI* AI) {
 		}
 		gameBoard[positionToBoardIndex(pieceX, pieceY)] = type;
 
-		analyzeBoard(AI ? *AI : defaultAI);
+		BoardAI& analysisAI = AI ? *AI : defaultAI;
+
+		analyzeBoard(analysisAI);
 
 		//Check board for certain formations
 		BoardRowSet brs = generateRows(pieceX, pieceY);
@@ -492,6 +494,19 @@ void Board::placePiece(BoardSpace type, BoardAI* AI) {
 		BoardAnalysisScoreType duBAST = analyzeLineLabel(brs.duRow, type);
 
 		BoardAnalysisScoreType comboResult = calculateCombos(hBAST, vBAST, ddBAST, duBAST);
+		//prevent false alarms for 5 in a row with spaces
+		if (comboResult == BAST_FiveInARow) {
+			BoardRowSet brs = generateRows(pieceX, pieceY);
+			analyzeLine(brs.hRow);
+			analyzeLine(brs.vRow);
+			analyzeLine(brs.ddRow);
+			analyzeLine(brs.duRow);
+			
+			BoardAnalysisScoreType trueResult = (type == BS_P1) ? calculateCombos(brs.hRow.p1, brs.vRow.p1, brs.ddRow.p1, brs.duRow.p1) : calculateCombos(brs.hRow.p2, brs.vRow.p2, brs.ddRow.p2, brs.duRow.p2);
+			if (trueResult != BAST_FiveInARow) {
+				comboResult = BAST_FourInRow;
+			}
+		}
 		sf::Color labelColor = (type == BS_P1) ? sf::Color::Red : sf::Color::Blue;
 
 		switch (comboResult) {
@@ -566,10 +581,10 @@ void Board::draw(sf::RenderTarget& canvas) {
 			case BS_Empty:
 				canvas.setView(windowView);
 				if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)) {
-					dispValText.setString(std::to_string(boardValues[positionToBoardIndex(x, y)].p2score));
+					dispValText.setString(std::to_string(boardScoreValues[positionToBoardIndex(x, y)].p2score));
 				}
 				else {
-					dispValText.setString(std::to_string(boardValues[positionToBoardIndex(x, y)].p1score));
+					dispValText.setString(std::to_string(boardScoreValues[positionToBoardIndex(x, y)].p1score));
 				}
 				dispValText.setPosition((float)((x * 16) * viewScaleDifference.x), (float)((y * 16) * viewScaleDifference.y));
 				canvas.draw(dispValText);
