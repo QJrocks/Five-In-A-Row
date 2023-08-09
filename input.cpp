@@ -5,70 +5,79 @@ namespace input {
 
 	bool piecePlaceHeld = false;
 	bool resetBoardHeld = false;
-}
 
-void input::updateInputs(Board& theBoard) {
-	int LRinput = 0;
-	int UDinput = 0;
+	uint8_t inputFlags;
 
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
-		UDinput -= 1;
-	}
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
-		UDinput += 1;
-	}
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
-		LRinput -= 1;
-	}
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
-		LRinput += 1;
-	}
+	void input::updateInputs() {
+		inputFlags = 0;
 
+		int LRinput = 0;
+		int UDinput = 0;
 
-	if (UDinput || LRinput) {
-		if (cursorRepeatTimer == 0) {
-			theBoard.moveCursor(LRinput, UDinput);
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) {
+			UDinput -= 1;
+		}
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
+			UDinput += 1;
+		}
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) {
+			LRinput -= 1;
+		}
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) {
+			LRinput += 1;
 		}
 
-		if (cursorRepeatTimer >= 20) {
-			theBoard.moveCursor(LRinput, UDinput);
-			cursorRepeatTimer -= 3;
+
+		if (UDinput != 0 || LRinput != 0) {
+			if (cursorRepeatTimer == 0 || cursorRepeatTimer >= 20) {
+				if (UDinput == -1) {
+					inputFlags |= INPUT_UP;
+				}
+				if (UDinput == 1) {
+					inputFlags |= INPUT_DOWN;
+				}
+				if (LRinput == -1) {
+					inputFlags |= INPUT_LEFT;
+				}
+				if (LRinput == 1) {
+					inputFlags |= INPUT_RIGHT;
+				}
+			}
+
+			if (cursorRepeatTimer >= 20) {
+				cursorRepeatTimer -= 3;
+			}
+			else {
+				cursorRepeatTimer++;
+			}
 		}
 		else {
-			cursorRepeatTimer++;
+			cursorRepeatTimer = 0;
 		}
-	}
-	else {
-		cursorRepeatTimer = 0;
+
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z)) {
+			if (!piecePlaceHeld) {
+				inputFlags |= INPUT_PLACE;
+			}
+			piecePlaceHeld = true;
+		}
+		else {
+			piecePlaceHeld = false;
+		}
+
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num1)) {
+			if (!resetBoardHeld) {
+				inputFlags |= INPUT_RESET;
+			}
+			resetBoardHeld = true;
+		}
+		else {
+			resetBoardHeld = false;
+		}
 	}
 
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Z)) {
-		if (!piecePlaceHeld) {
-			theBoard.placePiece(BS_P1);
-		}
-		piecePlaceHeld = true;
-	}
-	else {
-		piecePlaceHeld = false;
-	}
-
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::X)) {
-		theBoard.placePiece(BS_P2);
-	}
-
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num1)) {
-		if (!resetBoardHeld) {
-			theBoard.clearBoard(0);
-		}
-		resetBoardHeld = true;
-	}
-	else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Num2)) {
-		if (!resetBoardHeld) {
-			theBoard.clearBoard(1);
-		}
-		resetBoardHeld = true;
-	}
-	else {
-		resetBoardHeld = false;
+	uint8_t getInputFlags() {
+		return inputFlags;
 	}
 }
+

@@ -574,6 +574,8 @@ void Board::update() {
 }
 
 void Board::draw(sf::RenderTarget& canvas) {
+	canvas.setView(boardView);
+
 	boardVis.draw(canvas, 0, 0);
 	for (int x = 0; x < boardSize; x++) {
 		for (int y = 0; y < boardSize; y++) {
@@ -610,4 +612,7 @@ void Board::draw(sf::RenderTarget& canvas) {
 		canvas.draw(flashyText);
 		canvas.setView(boardView);
 	}
+
+
+	canvas.setView(windowView);
 }
